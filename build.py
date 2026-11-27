@@ -101,6 +101,20 @@ def build_player_gw(run, fixtures):
     df = df.drop(columns=["value", "id", "team_h", "team_a"]).rename(columns={"round": "event"})
     return df
 
+def build_team_gw(player_gw):
+    """One row per team per match: xG for and against"""
+    #sum the players xG per team per match -> get the teams xG
+    df = (player_gw
+            .groupby(["fixture", "event", "team", "opponent_team", "was_home"], as_index=False)
+            .agg(xg_for=("expected_goals", "sum"))
+            .rename(columns={"opponent_team": "opponent"}))
+    
+    opp = df[["fixture", "team", "xg_for"]].rename(columns={"team": "opponent", "xg_for": "xg_against"})
+    return df.merge(opp, on=["fixture", "opponent"], how="left")
+
+    
+    
+
 
 if __name__ == "__main__":
     # Only runs on `python build.py`, not when another file imports these functions
@@ -109,11 +123,14 @@ if __name__ == "__main__":
     fixtures = json.loads((run / "fixtures.json").read_text())
 
     fx = build_fixtures(fixtures)  # built first: build_player_gw needs it
+    pgw = build_player_gw(run, fx)
     tables = {  # table name in the database -> DataFrame
         "teams": build_teams(bootstrap),
         "players": build_players(bootstrap),
         "fixtures": fx,
-        "player_gw": build_player_gw(run, fx),
+        "player_gw": pgw,
+        "team_gw": build_team_gw(pgw)
+        
     }
     # A duplicate row would silently double a player's xG and points in every model
     assert not tables["player_gw"].duplicated(["element", "fixture"]).any(), "duplicate player-fixture rows"
