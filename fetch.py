@@ -41,8 +41,8 @@ def fetch_fpl(run_dir):
     #discard players with zero minutes, previous season history is handled later
     ids = [p["id"] for p in bootstrap["elements"] if p["minutes"] > 0]
     for i, pid in enumerate (ids, 1):
-        save(get_json(f"{FPL}/element-summary/{pid}/"), run_dir / "element-summary" / f"{pid}.json")
-        print(f"element-summary {i}/{len(ids)}", end="\r")
+        save(get_json(f"{FPL}/element-summary/{pid}/"), run_dir / "element_summary" / f"{pid}.json")
+        print(f"element_summary {i}/{len(ids)}", end="\r")
         time.sleep(0.3)
     print()
    
